@@ -7,6 +7,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
+app.use(express.static('public')); // Serve static files (HTML, CSS)
 
 // Create downloads folder
 const downloadsDir = path.join(__dirname, 'downloads');
@@ -14,14 +15,17 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir, { recursive: true });
 }
 
+// Serve frontend
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // API Endpoint: POST /download-video
-// Body: { "url": "https://vt.tiktok.com/xxxxxxxx" }
 app.post('/download-video', async (req, res) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: 'TikTok URL required!' });
 
     try {
-        // Use tiktok-api-dl to get video data (without watermark)
         const result = await Tiktok.Downloader(url, { version: 'v1' });
         if (!result.video || !result.video.noWatermark) {
             return res.status(404).json({ error: 'No video found or download failed!' });
@@ -32,7 +36,6 @@ app.post('/download-video', async (req, res) => {
         const filename = `${title}.mp4`;
         const filepath = path.join(downloadsDir, filename);
 
-        // Download video
         const response = await axios({ url: videoUrl, method: 'GET', responseType: 'stream' });
         response.data.pipe(fs.createWriteStream(filepath));
 
@@ -51,8 +54,5 @@ app.post('/download-video', async (req, res) => {
         res.status(500).json({ error: 'Failed to download: ' + error.message });
     }
 });
-
-// Health check
-app.get('/', (req, res) => res.send('TikTok Video Downloader API Ready!'));
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
