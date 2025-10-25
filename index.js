@@ -7,25 +7,22 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
-app.use(express.static('public')); // Serve static files (HTML, CSS)
+app.use(express.static('public'));
 
-// Create downloads folder
 const downloadsDir = path.join(__dirname, 'downloads');
 if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir, { recursive: true });
 }
 
-// Serve frontend
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API Endpoint: POST /download-video
 app.post('/download-video', async (req, res) => {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'TikTok URL required!' });
+    try {  // Wrap whole handler in try-catch
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'TikTok URL required!' });
 
-    try {
         const result = await Tiktok.Downloader(url, { version: 'v1' });
         if (!result.video || !result.video.noWatermark) {
             return res.status(404).json({ error: 'No video found or download failed!' });
@@ -50,9 +47,11 @@ app.post('/download-video', async (req, res) => {
             });
         });
     } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({ error: 'Failed to download: ' + error.message });
+        console.error('Full Error:', error);  // Log full error
+        res.status(500).json({ error: 'Download failed: ' + error.message });
     }
 });
+
+module.exports = app;  // Export for Vercel (serverless handler)
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
