@@ -1,0 +1,13 @@
+{
+    "name": "tiktok-video-downloader",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "@tobyg74/tiktok-api-dl": "^1.3.6",
+        "axios": "^1.6.0"
+    }
+}
